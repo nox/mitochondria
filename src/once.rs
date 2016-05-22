@@ -47,7 +47,11 @@ impl<T> OnceCell<T> {
     pub fn init_once<F: FnOnce() -> T>(&self, f: F) -> &T {
         let mut value = unsafe { &mut *self.0.get() };
         if value.is_none() {
-            *value = Some(f());
+            let new = f();
+            // f() may have changed value
+            if value.is_none() {
+                *value = Some(new);
+            }
         }
         value.as_ref().unwrap().borrow()
     }
