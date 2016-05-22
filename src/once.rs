@@ -75,3 +75,20 @@ impl<T> OnceCell<T> {
         unsafe { (*self.0.get()).as_ref() }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use OnceCell;
+
+    #[test]
+    fn reentrancy() {
+        let c = OnceCell::new(None);
+
+        let value = *c.init_once(|| {
+            c.init_once(|| "ribosome");
+            "nucleolus"
+        });
+
+        assert_eq!(value, "ribosome");
+    }
+}
