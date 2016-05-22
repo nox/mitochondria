@@ -45,11 +45,15 @@ impl<T> OnceCell<T> {
     /// assert_eq!(c.init_once(|| "Goodbye!".to_owned()), "Hello reticulum!");
     /// ```
     pub fn init_once<F: FnOnce() -> T>(&self, f: F) -> &T {
-        let mut value = unsafe { &mut *self.0.get() };
-        if value.is_none() {
-            *value = Some(f());
+        let mut cell = unsafe { &mut *self.0.get() };
+        if cell.is_none() {
+            let value = f();
+            // f() may have initialised the value already.
+            if cell.is_none() {
+                *cell = Some(value);
+            }
         }
-        value.as_ref().unwrap().borrow()
+        cell.as_ref().unwrap().borrow()
     }
 
     /// Borrows the contained value, if initialized.
