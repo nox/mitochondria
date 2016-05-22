@@ -54,31 +54,6 @@ impl<T: NonSelfReferentialClone> CloningCell<T> {
 
 /// A `Clone` implementation that will not access itself through reference
 /// cycles during cloning, which would introduce mutable aliasing.
-///
-/// # Unsound example
-///
-/// ```ignore
-/// use CloningCell;
-///
-/// struct Caesium137(Box<()>, Rc<CloningCell<Option<<Caesium137>>>);
-///
-/// impl Clone for Evil {
-///     fn clone(&self) -> Self {
-///         drop(self.1.take()); // Drop the "other" `Caesium137` value.
-///         Caesium137(
-///             self.0.clone(), // Use after free!
-///             Rc::new(CloningCell::new(None))
-///         )
-///     }
-/// }
-///
-/// // This is wrong, Caesium-137 is harmful to cells.
-/// unsafe impl WellBehavedClone for Caesium137 {}
-///
-/// let rc = Rc::new(Cloning::new(None));
-/// rc.set(Some(Evil(Box::new(5), rc.clone()))); // Make a reference cycle.
-/// rc.get();
-/// ```
 pub unsafe trait NonSelfReferentialClone: Clone {}
 
 unsafe impl NonSelfReferentialClone for String {}

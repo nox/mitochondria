@@ -1,6 +1,6 @@
 [package]
 name = "mitochondria"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Anthony Ramine <n.oxyde@gmail.com>"]
 description = "Mitochondria is the powerhouse of the `Cell`"
 repository = "https://github.com/nox/mitochondria"
