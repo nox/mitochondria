@@ -8,5 +8,5 @@
 mod cloning;
 mod once;
 
-pub use cloning::CloningCell;
+pub use cloning::{CloningCell, NonSelfReferentialClone};
 pub use once::OnceCell;

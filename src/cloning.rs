@@ -1,9 +1,10 @@
 use std::cell::UnsafeCell;
+use std::rc::{Rc, Weak};
 
 /// A mutable memory location that clones its contents on retrieval.
-pub struct CloningCell<T: Clone>(UnsafeCell<T>);
+pub struct CloningCell<T: NonSelfReferentialClone>(UnsafeCell<T>);
 
-impl<T: Clone> CloningCell<T> {
+impl<T: NonSelfReferentialClone> CloningCell<T> {
     /// Creates a new `CloningCell` containing the given value.
     ///
     /// # Example
@@ -50,3 +51,40 @@ impl<T: Clone> CloningCell<T> {
         unsafe { *self.0.get() = value; } 
     }
 }
+
+/// A `Clone` implementation that will not access itself through reference
+/// cycles during cloning, which would introduce mutable aliasing.
+///
+/// # Unsound example
+///
+/// ```ignore
+/// use CloningCell;
+///
+/// struct Caesium137(Box<()>, Rc<CloningCell<Option<<Caesium137>>>);
+///
+/// impl Clone for Evil {
+///     fn clone(&self) -> Self {
+///         drop(self.1.take()); // Drop the "other" `Caesium137` value.
+///         Caesium137(
+///             self.0.clone(), // Use after free!
+///             Rc::new(CloningCell::new(None))
+///         )
+///     }
+/// }
+///
+/// // This is wrong, Caesium-137 is harmful to cells.
+/// unsafe impl WellBehavedClone for Caesium137 {}
+///
+/// let rc = Rc::new(Cloning::new(None));
+/// rc.set(Some(Evil(Box::new(5), rc.clone()))); // Make a reference cycle.
+/// rc.get();
+/// ```
+pub unsafe trait NonSelfReferentialClone: Clone {}
+
+unsafe impl NonSelfReferentialClone for String {}
+
+unsafe impl<T> NonSelfReferentialClone for Rc<T> {}
+unsafe impl<T> NonSelfReferentialClone for Weak<T> {}
+
+unsafe impl<T: NonSelfReferentialClone> NonSelfReferentialClone for Box<T> {}
+unsafe impl<T: NonSelfReferentialClone> NonSelfReferentialClone for Option<T> {}
