@@ -1,0 +1,6 @@
+[package]
+name = "mitochondria"
+version = "0.1.0"
+authors = ["Anthony Ramine <n.oxyde@gmail.com>"]
+
+[dependencies]
