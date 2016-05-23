@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::cell::UnsafeCell;
 
 /// A mutable memory location that can be set only once.
@@ -45,15 +44,14 @@ impl<T> OnceCell<T> {
     /// assert_eq!(c.init_once(|| "Goodbye!".to_owned()), "Hello reticulum!");
     /// ```
     pub fn init_once<F: FnOnce() -> T>(&self, f: F) -> &T {
-        let mut cell = unsafe { &mut *self.0.get() };
-        if cell.is_none() {
+        if self.is_none() {
             let value = f();
             // f() may have initialised the value already.
-            if cell.is_none() {
-                *cell = Some(value);
+            if self.is_none() {
+                unsafe { *self.0.get() = Some(value); }
             }
         }
-        cell.as_ref().unwrap().borrow()
+        self.borrow().unwrap()
     }
 
     /// Borrows the contained value, if initialized.
@@ -73,6 +71,11 @@ impl<T> OnceCell<T> {
     #[inline]
     pub fn borrow(&self) -> Option<&T> {
         unsafe { (*self.0.get()).as_ref() }
+    }
+
+    #[inline]
+    fn is_none(&self) -> bool {
+        unsafe { (*self.0.get()).is_none() }
     }
 }
 
