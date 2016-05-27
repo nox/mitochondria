@@ -6,6 +6,4 @@ description = "Mitochondria is the powerhouse of the `Cell`"
 repository = "https://github.com/nox/mitochondria"
 readme = "README.md"
 keywords = ["cell"]
-license-file = "LICENSE"
-
-[dependencies]
+license = "ISC"
