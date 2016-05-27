@@ -6,8 +6,9 @@
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
-mod cloning;
+#[path="move.rs"]
+mod move_;
 mod once;
 
-pub use cloning::{CloningCell, NonSelfReferentialClone};
+pub use move_::MoveCell;
 pub use once::OnceCell;
