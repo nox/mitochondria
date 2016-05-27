@@ -1,29 +1,101 @@
-use std::cell::UnsafeCell;
+pub use self::core::OnceCell;
 
-/// A mutable memory location that can be set only once.
-pub struct OnceCell<T>(UnsafeCell<Option<T>>);
+#[allow(unsafe_code)]
+mod core {
+    use std::cell::UnsafeCell;
+
+    /// A mutable memory location that can be set only once.
+    pub struct OnceCell<T>(UnsafeCell<Option<T>>);
+
+    impl<T> OnceCell<T> {
+        /// Creates a new `OnceCell` that may already be initialized.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use mitochondria::OnceCell;
+        ///
+        /// let c = OnceCell::new(Some("Hello vesicle!".to_owned()));
+        /// ```
+        #[inline]
+        pub fn new(value: Option<T>) -> Self {
+            OnceCell(UnsafeCell::new(value))
+        }
+
+        /// Calls a function to try to initialize this cell.
+        ///
+        /// If the cell was already-initialized, the function is *not* called.
+        /// Otherwise, if the function returns `Ok(value)`, the cell is
+        /// initialized with `value`.
+        ///
+        /// This method returns `None` if the cell could not be initialized,
+        /// or `Some(&value)` otherwise.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use mitochondria::OnceCell;
+        ///
+        /// let c = OnceCell::new(None);
+        ///
+        /// assert_eq!(c.try_init_once(|| Err(())), None);
+        ///
+        /// let greeting: &str = c.try_init_once(|| {
+        ///     Ok("Hello ribosome!".to_owned())
+        /// }).unwrap();
+        /// ```
+        ///
+        /// ```
+        /// use mitochondria::OnceCell;
+        ///
+        /// let c = OnceCell::new(Some("Hello reticulum!".to_owned()));
+        ///
+        /// // Calls to `try_init_once` on initialized cells are ignored.
+        /// assert_eq!(c.try_init_once(|| Ok("Goodbye!".to_owned())).unwrap(),
+        ///            "Hello reticulum!");
+        /// ```
+        #[allow(unsafe_code)]
+        #[inline]
+        pub fn try_init_once<F>(&self, f: F) -> Option<&T>
+            where F: FnOnce() -> Result<T, ()>
+        {
+            if self.borrow().is_none() {
+                if let Ok(value) = f() {
+                    // f() may have initialised the value already.
+                    if self.borrow().is_none() {
+                        unsafe { *self.0.get() = Some(value); }
+                    }
+                }
+            }
+            self.borrow()
+        }
+
+        /// Borrows the contained value, if initialized.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use mitochondria::OnceCell;
+        ///
+        /// let c = OnceCell::new(None);
+        ///
+        /// assert!(c.borrow().is_none());
+        ///
+        /// let greeting = c.init_once(|| "Hello nucleus!".to_owned());
+        /// assert_eq!(c.borrow(), Some(greeting));
+        /// ```
+        #[inline]
+        pub fn borrow(&self) -> Option<&T> {
+            unsafe { (*self.0.get()).as_ref() }
+        }
+    }
+}
 
 impl<T> OnceCell<T> {
-    /// Creates a new `OnceCell` that may already be initialized.
+    /// Calls a function to initialize this cell and borrows its value.
     ///
-    /// # Example
-    ///
-    /// ```
-    /// use mitochondria::OnceCell;
-    ///
-    /// let c = OnceCell::new(Some("Hello vesicle!".to_owned()));
-    /// ```
-    #[inline]
-    pub fn new(value: Option<T>) -> Self {
-        OnceCell(UnsafeCell::new(value))
-    }
-
-    /// Performs an initialization routine once and only once. The given closure
-    /// will be executed if this is the first time `init_once` has been called,
-    /// and otherwise the routine will *not* be invoked.
-    ///
-    /// The result of the given closure is then used to set the contents of this
-    /// cell and borrowed as the return value of this method.
+    /// If the cell was already-initialized, the function is *not* called and
+    /// the returned value is the one that was already there.
     ///
     /// # Examples
     ///
@@ -40,42 +112,13 @@ impl<T> OnceCell<T> {
     ///
     /// let c = OnceCell::new(Some("Hello reticulum!".to_owned()));
     ///
-    /// // Calls to `init_once` on already-initialized cells are ignored.
-    /// assert_eq!(c.init_once(|| "Goodbye!".to_owned()), "Hello reticulum!");
-    /// ```
-    pub fn init_once<F: FnOnce() -> T>(&self, f: F) -> &T {
-        if self.is_none() {
-            let value = f();
-            // f() may have initialised the value already.
-            if self.is_none() {
-                unsafe { *self.0.get() = Some(value); }
-            }
-        }
-        self.borrow().unwrap()
-    }
-
-    /// Borrows the contained value, if initialized.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mitochondria::OnceCell;
-    ///
-    /// let c = OnceCell::new(None);
-    ///
-    /// assert!(c.borrow().is_none());
-    ///
-    /// let greeting = c.init_once(|| "Hello nucleus!".to_owned());
-    /// assert_eq!(c.borrow(), Some(greeting));
+    /// // Calls to `init_once` on initialized cells are ignored.
+    /// assert_eq!(c.init_once(|| "Goodbye!".to_owned()),
+    ///            "Hello reticulum!");
     /// ```
     #[inline]
-    pub fn borrow(&self) -> Option<&T> {
-        unsafe { (*self.0.get()).as_ref() }
-    }
-
-    #[inline]
-    fn is_none(&self) -> bool {
-        unsafe { (*self.0.get()).is_none() }
+    pub fn init_once<F>(&self, f: F) -> &T where F: FnOnce() -> T {
+        self.try_init_once(|| Ok(f())).unwrap()
     }
 }
 

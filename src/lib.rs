@@ -4,6 +4,7 @@
 //! covered by the triumvirate of `Cell`, `RefCell` and `UnsafeCell`.
 
 #![deny(missing_docs)]
+#![deny(unsafe_code)]
 
 mod cloning;
 mod once;

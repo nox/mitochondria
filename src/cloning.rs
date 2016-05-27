@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use std::cell::UnsafeCell;
 use std::rc::{Rc, Weak};
 
