@@ -1,11 +1,15 @@
 pub use self::core::OnceCell;
 
+use std::fmt;
+
 #[allow(unsafe_code)]
 mod core {
     use std::cell::UnsafeCell;
 
     /// A mutable memory location that can be set only once.
     pub struct OnceCell<T>(UnsafeCell<Option<T>>);
+
+    unsafe impl<T> Send for OnceCell<T> where T: Send {}
 
     impl<T> OnceCell<T> {
         /// Creates a new `OnceCell` that may already be initialized.
@@ -119,6 +123,26 @@ impl<T> OnceCell<T> {
     #[inline]
     pub fn init_once<F>(&self, f: F) -> &T where F: FnOnce() -> T {
         self.try_init_once(|| Ok(f())).unwrap()
+    }
+}
+
+impl<T: Clone> Clone for OnceCell<T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        OnceCell::new(self.borrow().cloned())
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for OnceCell<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("OnceCell").field(&self.borrow()).finish()
+    }
+}
+
+impl<T: Default> Default for OnceCell<T> {
+    #[inline]
+    fn default() -> Self {
+        OnceCell::new(Default::default())
     }
 }
 
