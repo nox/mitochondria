@@ -8,6 +8,8 @@ mod core {
     /// A mutable memory location that clones its contents on retrieval.
     pub struct MoveCell<T>(UnsafeCell<T>);
 
+    unsafe impl<T> Send for MoveCell<T> where T: Send {}
+
     impl<T> MoveCell<T> {
         /// Creates a new `MoveCell` containing the given value.
         ///
@@ -58,6 +60,13 @@ impl<T> MoveCell<T> {
     #[inline]
     pub fn set(&self, value: T) {
         drop(self.replace(value));
+    }
+}
+
+impl<T: Default> Default for MoveCell<T> {
+    #[inline]
+    fn default() -> Self {
+        MoveCell::new(Default::default())
     }
 }
 
