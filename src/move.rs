@@ -5,7 +5,7 @@ mod core {
     use std::cell::UnsafeCell;
     use std::mem;
 
-    /// A mutable memory location that clones its contents on retrieval.
+    /// A mutable memory location that steals ownership.
     pub struct MoveCell<T>(UnsafeCell<T>);
 
     unsafe impl<T> Send for MoveCell<T> where T: Send {}
