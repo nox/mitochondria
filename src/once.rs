@@ -139,10 +139,10 @@ impl<T: fmt::Debug> fmt::Debug for OnceCell<T> {
     }
 }
 
-impl<T: Default> Default for OnceCell<T> {
+impl<T> Default for OnceCell<T> {
     #[inline]
     fn default() -> Self {
-        OnceCell::new(Default::default())
+        OnceCell::new(None)
     }
 }
 
