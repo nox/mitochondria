@@ -7,6 +7,66 @@ mod core {
     use std::cell::UnsafeCell;
 
     /// A mutable memory location that can be set only once.
+    ///
+    /// This is useful to lazily build some value or to cache an expensive
+    /// computation without the overhead of `RefCell`.
+    ///
+    /// # Usage
+    ///
+    /// ```
+    /// use mitochondria::OnceCell;
+    ///
+    /// let c = OnceCell::new();
+    ///
+    /// assert_eq!(c.as_ref(), None);
+    ///
+    /// let value = c.init_once(|| "ribosome");
+    ///
+    /// assert_eq!(value, &"ribosome");
+    /// assert_eq!(c.as_ref(), Some(&"ribosome"));
+    ///
+    /// let value_again = c.init_once(|| "nucleolus");
+    ///
+    /// assert_eq!(value_again, &"ribosome");
+    /// ```
+    ///
+    /// # Reentrancy
+    ///
+    /// To ensure that the cell is initialized only once in all its lifetime,
+    /// if `try_init_once` or `init_once` are called reentranly from
+    /// the `f` argument they take, the result of that reentrant call will be
+    /// used and the return value of their caller `f` will be ignored.
+    ///
+    /// ```
+    /// use mitochondria::OnceCell;
+    ///
+    /// let x = OnceCell::new();
+    /// let value = x.init_once(|| {
+    ///     x.init_once(|| "ribosome");
+    ///     "nucleolus"
+    /// });
+    ///
+    /// assert_eq!(value, &"ribosome");
+    /// assert_eq!(x.as_ref(), Some(&"ribosome"));
+    ///
+    /// let y = OnceCell::new();
+    /// let value = y.try_init_once::<(), _>(|| {
+    ///     let _ = y.try_init_once::<(), _>(|| Ok("ribosome"));
+    ///     Ok("nucleolus")
+    /// });
+    ///
+    /// assert_eq!(value, Ok(&"ribosome"));
+    /// assert_eq!(y.as_ref(), Some(&"ribosome"));
+    ///
+    /// let z = OnceCell::new();
+    /// let value = z.try_init_once::<(), _>(|| {
+    ///     z.init_once(|| "ribosome");
+    ///     Err(())
+    /// });
+
+    /// assert_eq!(value, Ok(&"ribosome"));
+    /// assert_eq!(z.as_ref(), Some(&"ribosome"));
+    /// ```
     pub struct OnceCell<T>(UnsafeCell<Option<T>>);
 
     unsafe impl<T> Send for OnceCell<T> where T: Send {}
@@ -46,8 +106,8 @@ mod core {
         /// Otherwise, if the function returns `Ok(value)`, the cell is
         /// initialized with `value`.
         ///
-        /// This method returns `None` if the cell could not be initialized,
-        /// or `Some(&value)` otherwise.
+        /// This method returns `Err(error)` if `f` was called and returned an
+        /// error, or `Ok(&value)` otherwise.
         ///
         /// # Examples
         ///
@@ -267,44 +327,5 @@ mod tests {
     fn send() {
         fn assert_send<T: Send>() {}
         assert_send::<OnceCell<usize>>();
-    }
-
-    #[test]
-    fn init_once_reentrancy() {
-        let c = OnceCell::new();
-
-        let value = c.init_once(|| {
-            c.init_once(|| "ribosome");
-            "nucleolus"
-        });
-
-        assert_eq!(value, &"ribosome");
-        assert_eq!(c.as_ref(), Some(&"ribosome"));
-    }
-
-    #[test]
-    fn try_init_once_reentrancy() {
-        let c = OnceCell::new();
-
-        let value = c.try_init_once::<(), _>(|| {
-            let _ = c.try_init_once::<(), _>(|| Ok("ribosome"));
-            Ok("nucleolus")
-        });
-
-        assert_eq!(value, Ok(&"ribosome"));
-        assert_eq!(c.as_ref(), Some(&"ribosome"));
-    }
-
-    #[test]
-    fn try_init_once_error_reentrancy() {
-        let c = OnceCell::new();
-
-        let value = c.try_init_once::<(), _>(|| {
-            c.init_once(|| "ribosome");
-            Err(())
-        });
-
-        assert_eq!(value, Ok(&"ribosome"));
-        assert_eq!(c.as_ref(), Some(&"ribosome"));
     }
 }
