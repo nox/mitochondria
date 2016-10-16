@@ -3,3 +3,10 @@ rust:
   - nightly
   - beta
   - stable
+env:
+  - FEATURES=""
+  - FEATURES="no_std"
+script:
+  - |
+    cargo build -vv
+    cargo test -vv

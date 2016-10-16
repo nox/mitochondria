@@ -140,8 +140,8 @@ mod tests {
 
     #[test]
     fn default() {
-        let x = MoveCell::<String>::default();
-        assert_eq!(x.into_inner(), "");
+        let x = MoveCell::<usize>::default();
+        assert_eq!(x.into_inner(), 0);
     }
 
     #[test]
@@ -153,6 +153,6 @@ mod tests {
     #[test]
     fn send() {
         fn assert_send<T: Send>() {}
-        assert_send::<MoveCell<String>>();
+        assert_send::<MoveCell<usize>>();
     }
 }
