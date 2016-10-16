@@ -3,10 +3,11 @@ rust:
   - nightly
   - beta
   - stable
+cache: cargo
 env:
   - FEATURES=""
   - FEATURES="no_std"
 script:
-  - |
-    cargo build -vv
-    cargo test -vv
+  - cargo build -vv
+  - cargo test -vv
+  - cargo package -vv
