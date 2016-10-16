@@ -242,6 +242,7 @@ mod tests {
         assert_eq!(x.clone().as_ref(), Some(&"ribosome"));
     }
 
+    #[cfg(not(feature = "no_std"))]
     #[test]
     fn debug() {
         let x = OnceCell::new();
@@ -252,7 +253,7 @@ mod tests {
 
     #[test]
     fn default() {
-        let x = OnceCell::<String>::default();
+        let x = OnceCell::<usize>::default();
         assert_eq!(x.as_ref(), None);
     }
 
@@ -265,7 +266,7 @@ mod tests {
     #[test]
     fn send() {
         fn assert_send<T: Send>() {}
-        assert_send::<OnceCell<String>>();
+        assert_send::<OnceCell<usize>>();
     }
 
     #[test]

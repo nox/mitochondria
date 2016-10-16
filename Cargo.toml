@@ -1,6 +1,6 @@
 [package]
 name = "mitochondria"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Anthony Ramine <n.oxyde@gmail.com>"]
 description = "Mitochondria is the powerhouse of the `Cell`"
 repository = "https://github.com/nox/mitochondria"
@@ -8,3 +8,6 @@ documentation = "https://docs.rs/mitochondria"
 readme = "README.md"
 keywords = ["cell"]
 license = "ISC"
+
+[features]
+no_std = []
