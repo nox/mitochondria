@@ -67,7 +67,9 @@ mod core {
     /// assert_eq!(value, Ok(&"ribosome"));
     /// assert_eq!(z.as_ref(), Some(&"ribosome"));
     /// ```
-    pub struct OnceCell<T>(UnsafeCell<Option<T>>);
+    pub struct OnceCell<T> {
+        value: UnsafeCell<Option<T>>
+    }
 
     unsafe impl<T> Send for OnceCell<T> where T: Send {}
 
@@ -83,7 +85,9 @@ mod core {
         /// ```
         #[inline]
         pub fn new() -> Self {
-            OnceCell(UnsafeCell::new(None))
+            OnceCell {
+                value: UnsafeCell::new(None)
+            }
         }
 
         /// Creates a new `OnceCell` initialised with `value`.
@@ -97,7 +101,9 @@ mod core {
         /// ```
         #[inline]
         pub fn new_with_value(value: T) -> Self {
-            OnceCell(UnsafeCell::new(Some(value)))
+            OnceCell {
+                value: UnsafeCell::new(Some(value))
+            }
         }
 
         /// Calls a function to try to initialize this cell.
@@ -148,7 +154,7 @@ mod core {
                 return Ok(value);
             }
             let value = try!(result);
-            unsafe { *self.0.get() = Some(value); }
+            unsafe { *self.value.get() = Some(value); }
             Ok(self.as_ref().unwrap())
         }
 
@@ -169,7 +175,7 @@ mod core {
         /// ```
         #[inline]
         pub fn as_ref(&self) -> Option<&T> {
-            unsafe { (*self.0.get()).as_ref() }
+            unsafe { (*self.value.get()).as_ref() }
         }
 
         /// Returns `None` if the cell is not initialised, or else returns a
@@ -193,7 +199,7 @@ mod core {
         /// ```
         #[inline]
         pub fn as_mut(&mut self) -> Option<&mut T> {
-            unsafe { (*self.0.get()).as_mut() }
+            unsafe { (*self.value.get()).as_mut() }
         }
     }
 }
